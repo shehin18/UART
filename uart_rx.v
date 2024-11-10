@@ -31,7 +31,7 @@ always @(posedge rx_clk) begin
     case (rx_state)
     
     IDLE : begin
-        data <= 0;
+        data <= 1;
         bitpos <= 0;
         rx_count <= 0;
 
@@ -43,7 +43,6 @@ always @(posedge rx_clk) begin
 
     START : begin
         if (rx_count == (CLKS_PER_BIT - 1)/2) begin
-
             if (data == 1'b0) begin //making sure that start bit 0 is received
                 rx_count <= 0;
                 rx_state <= DATA_BURST;
@@ -52,27 +51,23 @@ always @(posedge rx_clk) begin
             rx_state <= IDLE;
         end
         else begin
-            rx_count <= rx_count + 1;
+            rx_count <= rx_count + 1; //increment till mid-point of data bit reached ((CLKS_PER_BIT-1)/2)
             rx_state <= START;
         end
     end //START
 
     DATA_BURST : begin
-        
         if(rx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles to sample serial data
             rx_count <= rx_count + 1;
             rx_state <= DATA_BURST;
         end
-
         else begin
             rx_count <= 0;
             rx_out[bitpos] <= data;
-
             if (bitpos < 3'h7) begin //check if all bits are received
                 bitpos <= bitpos + 1'b1;
                 rx_state <= DATA_BURST;
             end
-
             else begin
                 bitpos <= 0;
                 rx_state <= STOP;
@@ -81,18 +76,15 @@ always @(posedge rx_clk) begin
     end //DATA_BURST
 
     STOP : begin
-
         if(rx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles for stop bit to finish
             rx_count <= rx_count + 1;
             rx_state <= STOP;
         end
-
         else begin
             rx_count <= 0;
             rx_state <= IDLE;
         end
     end //STOP
-
     endcase
 end
 
