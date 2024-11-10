@@ -44,7 +44,6 @@ always @(posedge tx_clk) begin
 
     START : begin
         tx_out <= 1'b0; //send out start bit
-
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles for start bit to finish
             tx_count <= tx_count + 1;
             tx_state <= START;
@@ -57,20 +56,16 @@ always @(posedge tx_clk) begin
 
     DATA_BURST : begin
         tx_out <= data[bitpos];
-
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles to finish
             tx_count <= tx_count + 1;
             tx_state <= DATA_BURST;
         end
-
         else begin
             tx_count <= 0;
-
             if (bitpos < 3'h7) begin //check if all 8 bits are received
                 bitpos <= bitpos + 1'b1;
                 tx_state <= DATA_BURST;
             end
-
             else begin //all bits sent
                 bitpos <= 0;
                 tx_state <= STOP;
@@ -80,18 +75,15 @@ always @(posedge tx_clk) begin
 
     STOP : begin
         tx_out <= 1'b1; //stop bit 1
-
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles for stop bit to finish
             tx_count <= tx_count + 1;
             tx_state <= STOP;
         end
-
         else begin
             tx_count <= 0;
             tx_state <= IDLE;
         end
     end //STOP
-
     endcase
 end
 
