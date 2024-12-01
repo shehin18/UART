@@ -65,7 +65,7 @@ initial begin
     rst_n = 1;
 
     // Test: Send and receive a byte
-    UART_WRITE_BYTE(8'hE3); //send byte 0xE3
+    UART_READ_BYTE(8'hE3); //send byte 0xE3
 
     // Wait and check if data received matches
     #(BIT_PERIOD * 10);
