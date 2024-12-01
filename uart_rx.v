@@ -4,9 +4,9 @@
 
 module uart_rx
 #(parameter CLKS_PER_BIT = 521)
-(rx_in, rx_clk, rx_out);
+  (rx_in, rst_n, rx_clk, rx_out);
 
-input wire rx_in; //data input
+input wire rx_in, rst_n; //data input
 input wire rx_clk; //clock signal
 output reg [7:0] rx_out; //8 bit data output
 
@@ -22,12 +22,19 @@ reg [1:0] rx_state = IDLE;
 
 //double register approach to avoid metastability
 reg R1;
-  always @(posedge rx_clk) begin
+  always @(posedge rx_clk or negedge rst_n) begin
+    if(!rst_n)
+    rx_count <= 0;
+    bitpos <= 0;
+    rx_state <= IDLE;
+    rx_out <= 0;
+    data <= 1;
+    end
+    else begin  
     R1 <= rx_in;
     data <= R1;
-  end
-
-always @(posedge rx_clk) begin
+    end    
+    
     case (rx_state)
     
     IDLE : begin
