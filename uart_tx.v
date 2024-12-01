@@ -4,11 +4,11 @@
 
 module uart_tx
 #(parameter CLKS_PER_BIT = 521)
-(tx_in, tx_clk, tx_en, tx_out);
+(tx_in, rst_n, tx_clk, tx_out);
 
-input wire [7:0] tx_in; //8-bit data input
-input wire tx_en; //enable signal
-input wire tx_clk; //clock signal
+input [7:0] tx_in; //8-bit data input
+input rst_n; //reset
+input tx_clk; //clock signal
 output reg tx_out; //output data
 
 parameter IDLE = 2'b00;
@@ -17,26 +17,29 @@ parameter DATA_BURST = 2'b10;
 parameter STOP = 2'b11;
 
 reg [7:0] data = 8'h0; //to store the incoming 8-bit data
-reg [7:0] tx_count = 0;
+reg [7:0] tx_count = 8'h0;
 reg [3:0] bitpos = 4'h0;
 reg [1:0] tx_state = IDLE;
 
-//double register approach to avoid metastability
-reg [7:0] R1;
-  always @(posedge tx_clk) begin
-    R1 <= tx_in;
-    data <= R1;
-  end
 
-always @(posedge tx_clk) begin
+always @(posedge tx_clk or negedge rst_n;) begin
+  if(!rst_n) begin
+  tx_out <= 1'b1;
+  tx_count <= 8'h0;
+  bitpos <= 4'h0;
+  tx_state <= IDLE;
+  end
+  else begin
+    data <= tx_in;
+
     case (tx_state)
     
     IDLE : begin
-        data <= 0;
+        tx_out <= 1;
         bitpos <= 0;
         tx_count <= 0;
 
-        if(tx_en == 1'b0) //start bit received
+        if(tx_out == 1'b0) //start bit received
             tx_state <= START;
         else
             tx_state <= IDLE;
@@ -85,6 +88,7 @@ always @(posedge tx_clk) begin
         end
     end //STOP
     endcase
+    end
 end
 
 endmodule
