@@ -1,7 +1,5 @@
 `timescale 1ns/10ps
 
-//`include "uart_tx.v"
-//`include "uart_tx.v"
 
 module uart_tb ();
 
@@ -13,64 +11,70 @@ parameter CLKS_PER_BIT = 521;
 parameter BIT_PERIOD = 10416; //time in ns that each bit should be present
 
 
-reg [7:0] tx_in = 0;
-reg tx_en = 0;
+reg [7:0] tx_in = 8'h0;
 reg i_clk = 0;
-wire tx_out;
 reg rx_in;
+reg rst_n;
+
+wire tx_out;
 wire [7:0] rx_out;
 
-task UART_WRITE_BYTE; //task to serialize input data
-    input [7:0] i_data;
+task UART_READ_BYTE; //task to serialize input data
+    input [7:0] data;
     integer i;
     begin
-      tx_in <= 1'b0; //send start bit
+      rx_in <= 1'b0; //send start bit
       #(BIT_PERIOD);
       #1000;
        
       for (i=0; i<8; i=i+1)
         begin
-          tx_in <= i_data[i];
+          rx_in <= data[i];
           #(BIT_PERIOD);
         end
        
-      tx_in <= 1'b1; //send stop bit
+      rx_in <= 1'b1; //send stop bit
       #(BIT_PERIOD);
     end
-endtask //UART_WRITE_BYTE
+endtask //UART_READ_BYTE
+
 
 uart_tx #(.CLKS_PER_BIT(CLKS_PER_BIT)) UART_TX
-        (.tx_clk(i_clk),
-        .tx_en(tx_en),
+        (.rst_n(rst_n),
+        .tx_clk(i_clk),
         .tx_in(tx_in),
         .tx_out(tx_out));
 
 uart_rx #(.CLKS_PER_BIT(CLKS_PER_BIT)) UART_RX
-        (.rx_clk(i_clk),
+        (.rst_n(rst_n),
+        .rx_clk(i_clk),
         .rx_in(rx_in),
         .rx_out(rx_out));
 
 always //generating clock with 50% duty cycle
 #(CLK_PERIOD/2) i_clk <= ~i_clk;
 
+// Testbench sequence
 initial begin
-    @(posedge i_clk);
-    tx_en <= 1'b1;
-    tx_in <= 8'hBD;
-    @(posedge i_clk);
-    tx_en <= 1'b0;
+    $dumpfile("dump.vcd");
+    $dumpvars;
 
-    @(posedge i_clk);
-    UART_WRITE_BYTE(8'hE3);
+    rst_n = 0;
 
-    @(posedge i_clk);
+    #(CLK_PERIOD * 2);
+    rst_n = 1;
+
+    // Test: Send and receive a byte
+    UART_WRITE_BYTE(8'hE3); //send byte 0xE3
+
+    // Wait and check if data received matches
+    #(BIT_PERIOD * 10);
     if (rx_out == 8'hE3)
     $display ("Correct data received");
     else
     $display ("Incorrect data received");
-
+    $finish;
 
 end
-
 
 endmodule
