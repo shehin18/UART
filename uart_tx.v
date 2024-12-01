@@ -22,7 +22,7 @@ reg [3:0] bitpos = 4'h0;
 reg [1:0] tx_state = IDLE;
 
 
-always @(posedge tx_clk or negedge rst_n;) begin
+always @(posedge tx_clk or negedge rst_n) begin
   if(!rst_n) begin
   tx_out <= 1'b1;
   tx_count <= 8'h0;

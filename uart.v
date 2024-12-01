@@ -7,8 +7,8 @@ input tx_clk; //clock signal
 input rx_clk; //clock signal
 input rx_in; //serial-in
 
-output reg tx_out; //serial-out
-output reg [7:0] d_out; //8 bit data output
+output tx_out; //serial-out
+output [7:0] d_out; //8 bit data output
 
 uart_tx TX (.rst_n(rst_n),
             .tx_in(d_in),
