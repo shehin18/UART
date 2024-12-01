@@ -5,9 +5,9 @@ input rst_n; //reset
 input [7:0] d_in; //8-bit data input
 input tx_clk; //clock signal
 input rx_clk; //clock signal
-input rx_in; //data input
+input rx_in; //serial-in
 
-output reg tx_out; //output data
+output reg tx_out; //serial-out
 output reg [7:0] d_out; //8 bit data output
 
 uart_tx TX (.rst_n(rst_n),
