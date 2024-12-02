@@ -9,38 +9,39 @@ module uart_rx
 input rx_in; //data input
 input rst_n; //reset
 input rx_clk; //clock signal
-output reg [7:0] rx_out; //8 bit data output
+output [7:0] rx_out; //8 bit data output
 
 parameter IDLE = 2'b00;
 parameter START = 2'b01;
 parameter DATA_BURST = 2'b10;
 parameter STOP = 2'b11;
 
-reg data = 1'b1; //to store the incoming data
+reg [7:0] data = 8'h0; //to store the incoming data
 reg [7:0] rx_count = 8'h0;
 reg [3:0] bitpos = 4'h0;
 reg [1:0] rx_state = IDLE;
 
+reg R1, R2; //two stage synchronizer
 
 always @(posedge rx_clk or negedge rst_n) begin
     if(!rst_n) begin
     rx_count <= 8'h0;
     bitpos <= 4'h0;
     rx_state <= IDLE;
-    rx_out <= 8'h0;
-    data <= 1'b1;
+    data <= 8'h0;
     end
     else begin  
-    data <= rx_in;  
-    
+    R1 <= rx_in;
+    R2 <= R1;
+
     case (rx_state)
     
     IDLE : begin
-        data <= 1'b1;
+        R2 <= 1'b1;
         bitpos <= 4'h0;
         rx_count <= 8'h0;
 
-        if(data == 1'b0) //start bit received
+        if(R2 == 1'b0) //start bit received
             rx_state <= START;
         else
             rx_state <= IDLE;
@@ -48,7 +49,7 @@ always @(posedge rx_clk or negedge rst_n) begin
 
     START : begin
         if (rx_count == (CLKS_PER_BIT - 1)/2) begin
-            if (data == 1'b0) begin //making sure that start bit 0 is received
+            if (R2 == 1'b0) begin //making sure that start bit 0 is received
                 rx_count <= 8'h0;
                 rx_state <= DATA_BURST;
             end
@@ -68,7 +69,7 @@ always @(posedge rx_clk or negedge rst_n) begin
         end
         else begin
             rx_count <= 8'h0;
-            rx_out[bitpos] <= data;
+            data[bitpos] <= R2;
             if (bitpos < 3'h7) begin //check if all bits are received
                 bitpos <= bitpos + 1;
                 rx_state <= DATA_BURST;
@@ -93,5 +94,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     endcase
     end
 end
+
+assign rx_out = data;
 
 endmodule
