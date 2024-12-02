@@ -26,7 +26,7 @@ always #(CLK_PERIOD / 2) rx_clk = ~rx_clk;
 task UART_WRITE_BYTE(input [7:0] data);
     integer i;
     begin
-        rx_in = 1'b0;                 // Start bit
+        rx_in <= 1'b0;                 // Start bit
         #(BIT_PERIOD);
         
         for (i = 0; i < 8; i = i + 1) begin

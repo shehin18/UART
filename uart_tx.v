@@ -4,10 +4,9 @@
 
 module uart_tx
 #(parameter CLKS_PER_BIT = 521)
-(tx_in, rst_n, tx_clk, tx_out);
+(tx_in, tx_clk, tx_out);
 
 input [7:0] tx_in; //8-bit data input
-input rst_n; //reset
 input tx_clk; //clock signal
 output reg tx_out; //output data
 
@@ -16,17 +15,12 @@ parameter START = 2'b01;
 parameter DATA_BURST = 2'b10;
 parameter STOP = 2'b11;
 
-reg [7:0] data = 8'h0; //to store the incoming 8-bit data
+reg [7:0] data = 8'h0; //to store the outgoing 8-bit data
 reg [7:0] tx_count = 8'h0;
 reg [3:0] bitpos = 4'h0;
 reg [1:0] tx_state = IDLE;
 
-reg R1, R2; //two stage synchronizer
-
 always @(posedge tx_clk) begin
-  
-    R2 <= R1;
-    tx_out <= R2;
 
     case (tx_state)
     
@@ -35,7 +29,8 @@ always @(posedge tx_clk) begin
         bitpos <= 0;
         tx_count <= 0;
 
-        if(tx_out == 1'b0) //start bit received
+        if(tx_out == 1'b0) //start bit
+            data <= tx_in;
             tx_state <= START;
         else
             tx_state <= IDLE;
@@ -44,8 +39,8 @@ always @(posedge tx_clk) begin
     START : begin
         tx_out <= 1'b0; //send out start bit
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles for start bit to finish
-            tx_count = tx_count + 1;
-            tx_state = START;
+            tx_count <= tx_count + 1;
+            tx_state <= START;
         end
         else begin
             tx_count <= 0;
@@ -54,7 +49,7 @@ always @(posedge tx_clk) begin
     end //START
 
     DATA_BURST : begin
-        R1 = data[bitpos];
+        tx_out <= data[bitpos];
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles to finish
             tx_count <= tx_count + 1;
             tx_state <= DATA_BURST;
@@ -85,6 +80,5 @@ always @(posedge tx_clk) begin
     end //STOP
     endcase
     end
-end
 
 endmodule
