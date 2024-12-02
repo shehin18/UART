@@ -21,6 +21,7 @@ reg [7:0] tx_count = 8'h0;
 reg [3:0] bitpos = 4'h0;
 reg [1:0] tx_state = IDLE;
 
+reg R1, R2; //two stage synchronizer
 
 always @(posedge tx_clk or negedge rst_n) begin
   if(!rst_n) begin
@@ -35,43 +36,43 @@ always @(posedge tx_clk or negedge rst_n) begin
     case (tx_state)
     
     IDLE : begin
-        tx_out <= 1;
-        bitpos <= 0;
-        tx_count <= 0;
+        tx_out = 1;
+        bitpos = 0;
+        tx_count = 0;
 
         if(tx_out == 1'b0) //start bit received
-            tx_state <= START;
+            tx_state = START;
         else
-            tx_state <= IDLE;
+            tx_state = IDLE;
     end //IDLE
 
     START : begin
         tx_out <= 1'b0; //send out start bit
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles for start bit to finish
-            tx_count <= tx_count + 1;
-            tx_state <= START;
+            tx_count = tx_count + 1;
+            tx_state = START;
         end
         else begin
-            tx_count <= 0;
-            tx_state <= DATA_BURST;
+            tx_count = 0;
+            tx_state = DATA_BURST;
         end
     end //START
 
     DATA_BURST : begin
-        tx_out <= data[bitpos];
+        tx_out = data[bitpos];
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles to finish
-            tx_count <= tx_count + 1;
-            tx_state <= DATA_BURST;
+            tx_count = tx_count + 1;
+            tx_state = DATA_BURST;
         end
         else begin
             tx_count <= 0;
             if (bitpos < 3'h7) begin //check if all 8 bits are received
-                bitpos <= bitpos + 1'b1;
-                tx_state <= DATA_BURST;
+                bitpos = bitpos + 1'b1;
+                tx_state = DATA_BURST;
             end
             else begin //all bits sent
-                bitpos <= 0;
-                tx_state <= STOP;
+                bitpos = 0;
+                tx_state = STOP;
             end
         end
     end //DATA_BURST
@@ -79,12 +80,12 @@ always @(posedge tx_clk or negedge rst_n) begin
     STOP : begin
         tx_out <= 1'b1; //stop bit 1
         if(tx_count < CLKS_PER_BIT - 1) begin //wait CLKS_PER_BIT-1 clock cycles for stop bit to finish
-            tx_count <= tx_count + 1;
-            tx_state <= STOP;
+            tx_count = tx_count + 1;
+            tx_state = STOP;
         end
         else begin
-            tx_count <= 0;
-            tx_state <= IDLE;
+            tx_count = 0;
+            tx_state = IDLE;
         end
     end //STOP
     endcase
