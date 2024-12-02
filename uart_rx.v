@@ -25,10 +25,10 @@ reg R1, R2; //two stage synchronizer
 
 always @(posedge rx_clk or negedge rst_n) begin
     if(!rst_n) begin
-    rx_count <= 8'h0;
-    bitpos <= 4'h0;
-    rx_state <= IDLE;
-    data <= 8'h0;
+    rx_count = 8'h0;
+    bitpos = 4'h0;
+    rx_state = IDLE;
+    data = 8'h0;
     end
     else begin  
     R1 <= rx_in;

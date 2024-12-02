@@ -15,23 +15,23 @@ reg rst_n = 1;
 
 wire [7:0] rx_out;
 
-task UART_READ_BYTE; //task to serialize input data
+task UART_WRITE_BYTE; //task to serialize input data
 input [7:0] data;
     integer i;
     begin
-      rx_in <= 1'b0; //send start bit
+      rx_in = 1'b0; //start bit
       #(BIT_PERIOD);
        
       for (i=0; i<8; i=i+1)
         begin
-          rx_in <= data[i];
+          rx_in = data[i];
           #(BIT_PERIOD);
         end
        
-      rx_in <= 1'b1; //send stop bit
+      rx_in = 1'b1; //stop bit
       #(BIT_PERIOD);
     end
-endtask //UART_READ_BYTE
+endtask //UART_WRITE_BYTE
 
 uart_rx #(.CLKS_PER_BIT(CLKS_PER_BIT)) UART_RX
         (.rst_n(rst_n),
@@ -39,14 +39,22 @@ uart_rx #(.CLKS_PER_BIT(CLKS_PER_BIT)) UART_RX
         .rx_in(rx_in),
         .rx_out(rx_out));
 
-always #(CLK_PERIOD/2) rx_clk <= ~rx_clk; //generating clock with 50% duty cycle
+always #(CLK_PERIOD/2) rx_clk = ~rx_clk; //generating clock with 50% duty cycle
 
 // Testbench sequence
 initial begin
     $dumpfile("dump.vcd");
     $dumpvars;
 
-    UART_READ_BYTE(8'hE3); //send byte 0xE3
+    //reset
+    rst_n = 0;
+    #(CLK_PERIOD * 2);
+    rst_n = 1;
+
+    // Wait for reset release
+    @(posedge rx_clk);
+
+    UART_WRITE_BYTE(8'hE3); //send byte 0xE3
 
     // Wait and check if data received matches
     @(posedge rx_clk);
